@@ -13,7 +13,7 @@ import { toast } from 'react-hot-toast'
 import { VscArrowLeft } from 'react-icons/vsc'
 
 const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = (
-  _props: InferGetStaticPropsType<typeof getStaticProps>
+  _props: InferGetStaticPropsType<typeof getStaticProps>,
 ) => {
   const { data: profile } = api.profilesRouter.getProfileById.useQuery({
     id: _props.id,
@@ -29,12 +29,39 @@ const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = (
       },
     )
 
+  const ctx = api.useContext()
+
+  const { mutate } = api.profilesRouter.toogleFollow.useMutation({
+    onSuccess: ({ isFollowing }) => {
+      toast.success('Following!')
+
+      if (!profile) return
+
+      ctx.profilesRouter.getProfileById.setData({ id: profile?.id }, (oldData) => {
+        if (!oldData) return oldData
+        return {
+          ...oldData,
+          followersCount: oldData.followersCount + (isFollowing ? 1 : -1),
+          followedByMe: isFollowing,
+        }
+      })
+    },
+    onError: (err) => {
+      const zErr = err.data?.zodError?.fieldErrors.userId
+      const zMessage = zErr ? zErr[0] ?? 'Try again later' : 'Try again later'
+
+      toast.error(`Error! ${zMessage}`)
+    },
+  })
+
   if (!data?.pages) return <LoadingSpinnerOverlay />
 
   if (!profile || !profile.name) return <ErrorPage statusCode={404} />
 
   const handleFollow = () => {
-    toast('Working on it!')
+    mutate({
+      userId: profile.id,
+    })
   }
 
   return (

@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/api/trpc'
-import { getInfiniteTweets } from '@/utils/Functions'
 import { TRPCError } from '@trpc/server'
 
 export const profilesRouter = createTRPCRouter({
@@ -49,6 +48,72 @@ export const profilesRouter = createTRPCRouter({
         followingCount: profile._count.following,
         tweetsCount: profile._count.tweets,
         followedByMe: profile.followers?.length > 0,
+      }
+    }),
+
+  toogleFollow: protectedProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input: { userId } }) => {
+      const currentUserId = ctx.session.user.id
+
+      if (currentUserId === userId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'You cannot follow yourself',
+        })
+      }
+
+      const following = await ctx.prisma.user.findUnique({
+        where: {
+          id: currentUserId,
+        },
+        select: {
+          following: {
+            where: {
+              id: userId,
+            },
+          },
+        },
+      })
+
+      console.log({
+        following,
+      })
+      let isFollowing: boolean
+
+      if (following?.following.length) {
+        isFollowing = false
+
+        await ctx.prisma.user.update({
+          where: {
+            id: currentUserId,
+          },
+          data: {
+            following: {
+              disconnect: {
+                id: userId,
+              },
+            },
+          },
+        })
+      } else {
+        isFollowing = true
+        await ctx.prisma.user.update({
+          where: {
+            id: currentUserId,
+          },
+          data: {
+            following: {
+              connect: {
+                id: userId,
+              },
+            },
+          },
+        })
+      }
+
+      return {
+        isFollowing,
       }
     }),
 })

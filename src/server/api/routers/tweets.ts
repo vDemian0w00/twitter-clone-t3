@@ -40,6 +40,8 @@ export const tweetsRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input: { id, limit = 10, cursor } }) => {
+      const userId = ctx.session?.user?.id
+
       const tweets = await getInfiniteTweets({
         whereClause: {
           userId: id,
@@ -47,6 +49,7 @@ export const tweetsRouter = createTRPCRouter({
         limit,
         cursor,
         ctx,
+        userId: userId,
       })
 
       let nextCursor: typeof cursor | null

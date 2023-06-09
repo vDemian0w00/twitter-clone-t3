@@ -1,5 +1,8 @@
 import { useSession } from 'next-auth/react'
 import { Button } from './Button'
+import { profilesRouter } from '../server/api/routers/profiles'
+import { api } from '@/utils/api'
+import { toast } from 'react-hot-toast'
 
 type FollowButtonProps = {
   isFollowing: boolean

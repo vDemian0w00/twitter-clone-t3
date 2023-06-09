@@ -20,10 +20,6 @@ export async function getInfiniteTweets({
   ctx: inferAsyncReturnType<typeof createTRPCContext>
   userId?: string
 }) {
-  console.log('getInfiniteTweets', {
-    userId,
-  })
-
   const tweets = await ctx.prisma.tweet.findMany({
     take: limit + 1,
     cursor: cursor
